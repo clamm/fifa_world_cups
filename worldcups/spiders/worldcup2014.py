@@ -6,16 +6,22 @@ class Worldcup2014Spider(scrapy.Spider):
     start_urls = ['https://en.wikipedia.org/wiki/2014_FIFA_World_Cup']
 
     def parse(self, response):
-        home_teams = response.xpath('//div[@itemscope="itemscope"]/table/tr[@itemprop="name"]/th/span/a/text()').extract()
+        common_path = '//div[@itemscope="itemscope"]/table/tr[@itemprop="name"]/'
+        home_teams = response.xpath(common_path + 'th[@itemprop="homeTeam"]/span/a/text()').extract()
+        away_teams = response.xpath(common_path + 'th[@itemprop="awayTeam"]/span/span/a/text()').extract()
+        scores_at_ninety_min = response.xpath(common_path + 'th/text()').extract()
 
-        for index, group in enumerate(response.xpath('//h3//span[contains(@id, "Group")]/text()').extract()):
-
-
-            yield {
-                'index': index,
-                'group': group,
-                'home_team': home_teams[index]
-            }
+        games_per_group = 6
+        for group_index, group in enumerate(response.xpath('//h3//span[contains(@id, "Group")]/text()').extract()):
+            for game_index in range(group_index * games_per_group, group_index * games_per_group + games_per_group):
+                yield {
+                    # 'game_index': game_index,
+                    'game': game_index + 1 - group_index * 6,
+                    'group': group,
+                    'home_team': home_teams[game_index],
+                    'away_team': away_teams[game_index],
+                    'score_at_90_min': scores_at_ninety_min[game_index]
+                }
 
 
         # for quote in response.css('div.quote'):
