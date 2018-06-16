@@ -46,7 +46,8 @@ class Worldcup2014Spider(scrapy.Spider):
 
     def clean_score(self, score_string):
         # we don't match a dash between the number groups as the scraped dash seems to be different (longer) than the typed dash
-        return re.sub(r'(\d{1,2}).(\d{1,2})(.*)', r'\1-\2', score_string)
+        if score_string is not None:
+            return re.sub(r'(\d{1,2}).(\d{1,2})(.*)', r'\1-\2', score_string)
 
     def parse(self, response):
         common_path = '//div[@itemscope="itemscope" and not(@itemprop)]'
@@ -60,6 +61,7 @@ class Worldcup2014Spider(scrapy.Spider):
             home_team = game.xpath(rel + teams_and_scores + '/th[@itemprop="homeTeam"]/span/a/text()').extract_first()
             away_team = game.xpath(rel + teams_and_scores + '/th[@itemprop="awayTeam"]/span/span/a/text()').extract_first()
             score = game.xpath(rel + teams_and_scores + '/th/text()').extract_first()
+            penalties = game.xpath(rel + 'table/tr[position()=4]/th/text()').extract_first()
 
             yield {
                 'total_game_index': total_games_idx,
@@ -68,6 +70,6 @@ class Worldcup2014Spider(scrapy.Spider):
                 'group': self.group(groups, total_games_idx),
                 'home_team': home_team,
                 'away_team': away_team,
-                'score': self.clean_score(score)
-
+                'score': self.clean_score(score),
+                'penalties': self.clean_score(penalties),
             }
