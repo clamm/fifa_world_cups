@@ -10,8 +10,17 @@ Install scrapy:
 pip install scrapy
 ```
 
-Generate the data files with past world cup data:
+Generate the data json file with past world cup data:
 
 ```
+cd data_acquisition
 scrapy crawl worldcup2014 -o data/worldcup2014.json
 ```
+
+Analyse data with [jupyter](http://jupyter.org), run the following to start the jupyter server locally:
+
+```
+jupyter notebook
+```
+
+Notebook: [fifa_world_cups](./data_analysis/fifa_world_cups.ipynb)

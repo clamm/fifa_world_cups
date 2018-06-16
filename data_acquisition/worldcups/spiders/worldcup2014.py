@@ -70,6 +70,6 @@ class Worldcup2014Spider(scrapy.Spider):
                 'group': self.group(groups, total_games_idx),
                 'home_team': home_team,
                 'away_team': away_team,
-                'score': self.clean_score(score),
-                'penalties': self.clean_score(penalties),
+                'score_home_vs_away': self.clean_score(score),
+                'penalties_home_vs_away': self.clean_score(penalties),
             }
