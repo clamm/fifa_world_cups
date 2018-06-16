@@ -40,41 +40,34 @@ class Worldcup2014Spider(scrapy.Spider):
         else:
             return 1
 
+    def group(self, groups, total_games_idx):
+        group_index = total_games_idx // 6
+        return groups[group_index] if group_index < len(groups) else None
+
     def clean_score(self, score_string):
         # we don't match a dash between the number groups as the scraped dash seems to be different (longer) than the typed dash
         return re.sub(r'(\d{1,2}).(\d{1,2})(.*)', r'\1-\2', score_string)
 
-    def get_scores(self, raw_scores):
-        # remove the trailing paranthesis in case there was overtime
-        return list(filter(lambda x: x != ')', raw_scores))
-
-    def get_penalities(self, raw_elements):
-        return list(filter(lambda x: re.match(r'.*[()].*', x) is not None, raw_scores)))
-
     def parse(self, response):
-        common_path = '//div[@itemscope="itemscope"]/'
-        teams_and_scores = 'table/tr[@itemprop="name"]/'
-        home_teams = response.xpath(common_path + teams_and_scores + 'th[@itemprop="homeTeam"]/span/a/text()').extract()
-        away_teams = response.xpath(common_path + teams_and_scores + 'th[@itemprop="awayTeam"]/span/span/a/text()').extract()
-        # scores at 90 min or after overtime
-        scores = self.get_scores(response.xpath(common_path + teams_and_scores + 'th/text()').extract())
-
-        penalty_scores = self.get_penalities(response.xpath(common_path + 'table[count(tr)=4]/tr/th/text()').extract())
+        common_path = '//div[@itemscope="itemscope" and not(@itemprop)]'
+        teams_and_scores = 'table/tr[@itemprop="name"]'
+        rel = './'
 
         groups = response.xpath('//h3//span[contains(@id, "Group")]/text()').extract()
-        games_per_group = 6
-        # 8 groups à 6 games, 8 games in the game of 16, 4 games in quarter finals, 2 games in semi finals, 2 games in finals
-        total_games = 8 * 6 + 8 + 4 + 2 + 2
 
-        for total_games_idx in range(total_games):
-            group_index = total_games_idx // 6
+        for total_games_idx, game in enumerate(response.xpath(common_path)):
+            # each div contains a div (times), table (scores) and another div (location, referee)
+            home_team = game.xpath(rel + teams_and_scores + '/th[@itemprop="homeTeam"]/span/a/text()').extract_first()
+            away_team = game.xpath(rel + teams_and_scores + '/th[@itemprop="awayTeam"]/span/span/a/text()').extract_first()
+            score = game.xpath(rel + teams_and_scores + '/th/text()').extract_first()
+
             yield {
                 'total_game_index': total_games_idx,
                 'game_number_within_game_type': self.game_number(total_games_idx),
                 'game_type': self.game_type(total_games_idx),
-                'group': groups[group_index] if group_index < len(groups) else None,
-                'home_team': home_teams[total_games_idx],
-                'away_team': away_teams[total_games_idx],
-                'score': self.clean_score(scores[total_games_idx])
+                'group': self.group(groups, total_games_idx),
+                'home_team': home_team,
+                'away_team': away_team,
+                'score': self.clean_score(score)
 
             }
